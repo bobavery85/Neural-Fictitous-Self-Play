@@ -12,7 +12,7 @@ class EvalAgentNFSP(_EvalAgentBase):
     EVAL_MODE_AVG = "NFSP_Avg"
     ALL_MODES = [EVAL_MODE_AVG]
 
-    def __init__(self, t_prof, mode=None, device=None):
+    def __init__(self, t_prof, mode=EVAL_MODE_AVG, device=None):
         super().__init__(t_prof=t_prof, mode=mode, device=device)
         self.avg_args = t_prof.module_args["avg"]
 

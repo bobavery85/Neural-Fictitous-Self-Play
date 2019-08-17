@@ -11,7 +11,7 @@ from PokerRL.rl.agent_modules.DDQN import DDQNArgs
 from PokerRL.rl.base_cls.TrainingProfileBase import TrainingProfileBase
 from PokerRL.rl.neural.AvrgStrategyNet import AvrgNetArgs
 from PokerRL.rl.neural.DuelingQNet import DuelingQArgs
-from PokerRL.rl.neural.MainPokerModuleFLAT import MPMArgsFLAT
+from PokerRL.rl.neural.MainPokerModuleFLAT import MPMArgsFLAT, PaperMPMArgsFLAT
 from PokerRL.rl.neural.MainPokerModuleRNN import MPMArgsRNN
 
 from NFSP.AvgWrapper import AvgWrapperArgs
@@ -26,6 +26,7 @@ class TrainingProfile(TrainingProfileBase):
                  name,
                  log_export_freq=200,
                  checkpoint_freq=99999999,
+                 export_hands_freq=10000,
                  eval_agent_export_freq=99999999,
 
                  # --- Computing
@@ -39,6 +40,7 @@ class TrainingProfile(TrainingProfileBase):
                  CLUSTER=False,
                  DEBUGGING=False,
                  VERBOSE=True,
+                 TESTING=False,
 
                  # --- env
                  game_cls=StandardLeduc,
@@ -56,7 +58,11 @@ class TrainingProfile(TrainingProfileBase):
 
                  # --- NFSP
                  nn_type="feedforward",
+                 nn_structure="paper",
+                 feedforward_env_builder=FlatLimitPokerEnvBuilder,
                  anticipatory_parameter=0.1,
+                 first_and_third_units=1024,
+                 second_and_fourth_units=512,
 
                  # Original NFSP also adds epsilon-exploration actions to the averaging buffer.
                  add_random_actions_to_avg_buffer=True,
@@ -66,7 +72,8 @@ class TrainingProfile(TrainingProfileBase):
                  target_net_update_freq=300,  # every N neural net updates. Not every N global iters, episodes, or steps
                  cir_buf_size_each_la=2e5,
                  res_buf_size_each_la=2e6,  # the more the better to infinity
-                 min_prob_add_res_buf=0.0,  # 0.0 =  vanilla reservoir; >0 exponential averaging.
+                 min_prob_add_res_buf=0.0,  # 0.0 =  vanilla reservoir; >0 exponential averaging
+                 action_and_hand_buffer_size=20000,
 
                  eps_start=0.06,
                  eps_const=0.01,
@@ -116,9 +123,12 @@ class TrainingProfile(TrainingProfileBase):
                  # Option
                  lbr_args=None,
                  rlbr_args=None,
+                 history_args=None,
                  ):
         print(" ************************** Initing args for: ", name, "  **************************")
-
+        print(torch.cuda.is_available())
+        print(torch.cuda.device_count())
+        print(torch.cuda.current_device())
         if nn_type == "recurrent":
             env_bldr_cls = HistoryEnvBuilder
 
@@ -138,16 +148,26 @@ class TrainingProfile(TrainingProfileBase):
                                       n_merge_and_table_layer_units=n_merge_and_table_layer_units_avg)
 
         elif nn_type == "feedforward":
-            env_bldr_cls = FlatLimitPokerEnvBuilder
-
-            mpm_args_br = MPMArgsFLAT(use_pre_layers=use_pre_layers_br,
-                                      card_block_units=n_cards_state_units_br,
-                                      other_units=n_merge_and_table_layer_units_br,
-                                      normalize=normalize_last_layer_flat,
-                                      )
-            mpm_args_avg = MPMArgsFLAT(use_pre_layers=use_pre_layers_avg,
-                                       card_block_units=n_cards_state_units_avg,
-                                       other_units=n_merge_and_table_layer_units_avg)
+            env_bldr_cls = feedforward_env_builder
+            if nn_structure == "paper":
+                mpm_args_br = PaperMPMArgsFLAT(first_units=first_and_third_units,
+                                               second_units=second_and_fourth_units,
+                                               third_units=first_and_third_units,
+                                               fourth_units=second_and_fourth_units,
+                                               normalize=normalize_last_layer_flat)
+                mpm_args_avg = PaperMPMArgsFLAT(first_units=first_and_third_units,
+                                               second_units=second_and_fourth_units,
+                                               third_units=first_and_third_units,
+                                               fourth_units=second_and_fourth_units)
+            else:
+                mpm_args_br = MPMArgsFLAT(use_pre_layers=use_pre_layers_br,
+                                          card_block_units=n_cards_state_units_br,
+                                          other_units=n_merge_and_table_layer_units_br,
+                                          normalize=normalize_last_layer_flat,
+                                          )
+                mpm_args_avg = MPMArgsFLAT(use_pre_layers=use_pre_layers_avg,
+                                           card_block_units=n_cards_state_units_avg,
+                                           other_units=n_merge_and_table_layer_units_avg)
 
         else:
             raise ValueError(nn_type)
@@ -158,6 +178,7 @@ class TrainingProfile(TrainingProfileBase):
             log_verbose=VERBOSE,
             log_export_freq=log_export_freq,
             checkpoint_freq=checkpoint_freq,
+            export_hands_freq=export_hands_freq,
             eval_agent_export_freq=eval_agent_export_freq,
             path_data=path_data,
             game_cls=game_cls,
@@ -167,6 +188,7 @@ class TrainingProfile(TrainingProfileBase):
             eval_stack_sizes=eval_stack_sizes,
 
             DEBUGGING=DEBUGGING,
+            TESTING=TESTING,
             DISTRIBUTED=DISTRIBUTED,
             CLUSTER=CLUSTER,
             device_inference=device_inference,
@@ -217,6 +239,7 @@ class TrainingProfile(TrainingProfileBase):
                 ),
                 "lbr": lbr_args,
                 "rlbr": rlbr_args,
+                "history": history_args,
             }
         )
 
@@ -230,7 +253,8 @@ class TrainingProfile(TrainingProfileBase):
         self.n_envs = int(n_envs)
         self.n_steps_pretrain_per_la = int(n_steps_pretrain_per_la)
         self.n_steps_per_iter_per_la = int(n_steps_per_iter_per_la)
-
+        self.action_and_hand_buffer_size = action_and_hand_buffer_size
+        
         if DISTRIBUTED or CLUSTER:
             self.n_learner_actors = int(n_learner_actor_workers)
         else:

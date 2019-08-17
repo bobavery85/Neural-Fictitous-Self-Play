@@ -11,7 +11,8 @@ class SeatActor:
     _AVG = 1
     _BR = 2
 
-    def __init__(self, seat_id, t_prof, env_bldr, br_memory_savers, avg_buf_savers, br_learner, avg_learner):
+    def __init__(self, seat_id, t_prof, env_bldr, br_memory_savers, avg_buf_savers,
+                 br_learner, avg_learner):#, action_and_hand_buffer):
         self.seat_id = seat_id
 
         self._t_prof = t_prof
@@ -23,6 +24,8 @@ class SeatActor:
         self._avg_buf_savers = avg_buf_savers
         self._br_memory_savers = br_memory_savers
 
+        #self._action_and_hand_buffer = action_and_hand_buffer
+        
         self._current_policy_tags = None
 
         self._n_actions_arranged = np.arange(self._env_bldr.N_ACTIONS)

@@ -1,14 +1,17 @@
 # Copyright (c) 2019 Eric Steinberger
 
 
+from os.path import join as ospj
 import pickle
 
 from NFSP.AvgWrapper import AvgWrapper
+from NFSP.workers.la.ActionAndHandBufferFLAT import ActionAndHandBufferFLAT
 from NFSP.workers.la.ParallelEnvs import ParallelEnvs
 from NFSP.workers.la.SeatActor import SeatActor
 from PokerRL.rl import rl_util
 from PokerRL.rl.agent_modules.DDQN import DDQN
 from PokerRL.rl.base_cls.workers.WorkerBase import WorkerBase
+from PokerRL.util import file_util
 
 
 class LearnerActor(WorkerBase):
@@ -41,7 +44,7 @@ class LearnerActor(WorkerBase):
             from PokerRL.rl.buffers.BRMemorySaverFLAT import BRMemorySaverFLAT
             from NFSP.workers.la.action_buffer.ActionBufferFLAT import ActionBufferFLAT, AvgMemorySaverFLAT
 
-            BR_BUF_CLS = CircularBufferFLAT
+            BR_BUF_CLS = CircularBufferFLAT  # TODO: is this wrong? Nope!
             BR_MEM_SAVER = BRMemorySaverFLAT
             AVG_BUF_CLS = ActionBufferFLAT
             AVG_MEM_SAVER = AvgMemorySaverFLAT
@@ -57,6 +60,9 @@ class LearnerActor(WorkerBase):
             BR_BUF_CLS(env_bldr=self._env_bldr, max_size=self._ddqn_args.cir_buf_size)
             for p in range(self._env_bldr.N_SEATS)
         ]
+        self._action_and_hand_buffer = ActionAndHandBufferFLAT(
+            env_bldr=self._env_bldr,
+            max_size=self._t_prof.action_and_hand_buffer_size)
         self._avg_memory_savers = [
             [
                 AVG_MEM_SAVER(env_bldr=self._env_bldr, buffer=self._avg_bufs[p])
@@ -83,7 +89,8 @@ class LearnerActor(WorkerBase):
         self._seat_actors = [
             SeatActor(t_prof=t_prof, env_bldr=self._env_bldr, seat_id=p,
                       br_memory_savers=self._br_memory_savers[p], avg_buf_savers=self._avg_memory_savers[p],
-                      br_learner=self._br_learner[p], avg_learner=self._avg_learner[p])
+                      br_learner=self._br_learner[p], avg_learner=self._avg_learner[p])#,
+                      #action_and_hand_buffer=self._action_and_hand_bufs[p])
             for p in range(self._env_bldr.N_SEATS)
         ]
 
@@ -100,7 +107,10 @@ class LearnerActor(WorkerBase):
         for n in range(n_steps // self._parallel_env.n_envs):
             # merge player's lists
             sws = [sw for plyr_sws in self._last_step_wrappers for sw in plyr_sws]
-
+            #for sw in sws:
+            #    if sw.TERMINAL:
+            #        continue
+            #    self._action_and_hand_buffer.add_step(sw.obs, sw.range_idxs)
             # Both players must see all envs here
             for s in self._seat_actors:
                 s.update_if_terminal(sws)
@@ -197,6 +207,21 @@ class LearnerActor(WorkerBase):
             self._parallel_env.load_state_dict(state["env"])
             self._last_step_wrappers = self._parallel_env.reset()
 
+    def export_hands(self, curr_step):
+        with open(self._get_export_hands_file_path(
+                      name=self._t_prof.name, step=curr_step, cls=self.__class__,
+                      worker_id=str(self._id) + "_General"), "wb") as pkl_file:
+            state = {
+                "action_and_hand_buffer": self._action_and_hand_buffer.state_dict()
+            }
+            pickle.dump(obj=state, file=pkl_file, protocol=pickle.HIGHEST_PROTOCOL)
+            self._action_and_hand_buffer.reset()
+            
+    def _get_export_hands_file_path(self, name, step, cls, worker_id):
+        path = ospj(self._t_prof.path_export_hands, str(name), str(step))
+        file_util.create_dir_if_not_exist(path)
+        return ospj(path, cls.__name__ + "_" + str(worker_id) + ".pkl")
+        
     def _all_eval(self):
         for q in self._br_learner:
             q.eval()

@@ -25,6 +25,9 @@ class Driver(_DriverBase):
         super().__init__(t_prof=t_prof, eval_methods=eval_methods, n_iterations=n_iterations,
                          iteration_to_import=iteration_to_import, name_to_import=name_to_import,
                          chief_cls=Chief, eval_agent_cls=EvalAgentNFSP)
+        
+        #if "history" in self.eval_masters:
+        #    self.eval_masters["history"].set_modes()
 
         print("Creating LAs...")
         self.la_handles = [
@@ -88,6 +91,7 @@ class Driver(_DriverBase):
 
             self.periodically_export_eval_agent()
             self.periodically_checkpoint()
+            self.periodically_export_hands()
 
             print("Played ", times["t_playing"], "s.",
                   "  ||  Trained", times["t_computation"], " s.",
@@ -135,3 +139,9 @@ class Driver(_DriverBase):
             s.append(self._cfr_iter - self._t_prof.checkpoint_freq)
 
         self._delete_past_checkpoints(steps_not_to_delete=s)
+        
+    def export_hands(self, **kwargs):
+        for w in self.la_handles:
+            self._ray.wait([
+                self._ray.remote(w.export_hands, self._cfr_iter)
+            ])

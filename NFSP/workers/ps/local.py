@@ -82,8 +82,9 @@ class ParameterServer(_ParameterServerBase):
             "avg_optim": self.avg_optim.state_dict(),
         }
 
-        with open(self._get_checkpoint_file_path(name=self._t_prof.name, step=curr_step,
-                                                 cls=self.__class__, worker_id="P" + str(self.seat_id)),
+        with open(self._get_checkpoint_file_path(
+            name=self._t_prof.name, step=curr_step,
+            cls=self.__class__, worker_id="P" + str(self.seat_id)),
                   "wb") as pkl_file:
             pickle.dump(obj=state, file=pkl_file, protocol=pickle.HIGHEST_PROTOCOL)
 
