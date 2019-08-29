@@ -10,16 +10,16 @@ from PokerRL.eval.head_to_head.HistoryArgs import HistoryArgs
 
 if __name__ == '__main__':
     
-    N_WORKERS = 3
+    N_WORKERS = 45
     t_prof=TrainingProfile(name="nine_player_limit",
                            
-                           DISTRIBUTED=False,
+                           DISTRIBUTED=True,
                            n_learner_actor_workers=N_WORKERS,
                            
                           nn_type="feedforward",
                           nn_structure="paper",
                           cir_buf_size_each_la=6e5 / N_WORKERS,
-                          res_buf_size_each_la=3e6,
+                          res_buf_size_each_la=6e6 / N_WORKERS,
                           min_prob_add_res_buf=0.25,
                           
                           n_envs=256,
@@ -35,10 +35,12 @@ if __name__ == '__main__':
                          
                           feedforward_env_builder=FlatNonHULimitPokerEnvBuilder,
                           
-                          checkpoint_freq=10000,
+                          checkpoint_freq=500,
                           export_hands_freq=999999999,
-                          eval_agent_export_freq=25000,
-                         
+                          eval_agent_export_freq=1000,
+                          lite_checkpoint=True,
+                          lite_checkpoint_steps=1280000,
+                          
                           target_net_update_freq=1000,
                           first_and_third_units=1024,
                           second_and_fourth_units=512,
@@ -53,9 +55,9 @@ if __name__ == '__main__':
                           n_br_updates_per_iter=2,
                           n_avg_updates_per_iter=2,
                           
-                          history_args=HistoryArgs(1000, 100000)
+                          history_args=HistoryArgs(1000, 10000)
                           )
     ctrl = Driver(t_prof,
-                  eval_methods={"history": 25000},
-                  n_iterations=250)
+                  eval_methods={},#"history": 1000},
+                  n_iterations=None)
     ctrl.run()

@@ -75,6 +75,7 @@ class ParameterServer(_ParameterServerBase):
     def checkpoint(self, curr_step):
         state = {
             "seat_id": self.seat_id,
+            "global_iter_id": self.global_iter_id,
             "eps": self.eps,
             "q_net": self.q_net.state_dict(),
             "avg_net": self.avg_net.state_dict(),
@@ -97,6 +98,7 @@ class ParameterServer(_ParameterServerBase):
             assert self.seat_id == state["seat_id"]
 
             self.eps = state["eps"]
+            self.global_iter_id = state["global_iter_id"]
             self.q_net.load_state_dict(state["q_net"])
             self.avg_net.load_state_dict(state["avg_net"])
             self.br_optim.load_state_dict(state["br_optim"])

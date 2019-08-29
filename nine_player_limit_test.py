@@ -25,6 +25,9 @@ if __name__ == '__main__':
                              
                              feedforward_env_builder=FlatNonHULimitPokerEnvBuilder,
                              export_hands_freq=999999999,
+                             checkpoint_freq=20,
+                             lite_checkpoint=True,
+                             lite_checkpoint_steps=1280000,
                              eval_agent_export_freq=100,
                              DISTRIBUTED=False,
                              target_net_update_freq=300,
@@ -44,8 +47,10 @@ if __name__ == '__main__':
                              history_args=HistoryArgs(100, 100)
                              )
     ctrl = Driver(t_prof,
-                  eval_methods={"history": 10},
-                  n_iterations=250)
+                  eval_methods={"history": 990},
+                  n_iterations=250,
+                  iteration_to_import=40,
+                  name_to_import="nine_player_limit")
     ctrl.run()
     #obs_interp = LimitObsInterpreter(t_prof)
     #buffer = obs_interp.GetActionAndHandBuffer()

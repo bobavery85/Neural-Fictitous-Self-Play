@@ -10,8 +10,8 @@ from PokerRL.rl.base_cls.workers.DriverBase import DriverBase as _DriverBase
 
 class Driver(_DriverBase):
 
-    def __init__(self,
-                 t_prof, eval_methods, n_iterations=None, iteration_to_import=None, name_to_import=None):
+    def __init__(self, t_prof, eval_methods, n_iterations=None,
+                 iteration_to_import=None, name_to_import=None):
         if t_prof.DISTRIBUTED:
             from NFSP.workers.chief.dist import Chief
             from NFSP.workers.la.dist import LearnerActor
@@ -61,6 +61,9 @@ class Driver(_DriverBase):
                                   chief_handle=self.chief_handle)
 
         self._maybe_load_checkpoint_init()
+        if iteration_to_import is not None:
+            self.algo.loaded_checkpoint(True)
+        
 
     def run(self):
         print("Setting stuff up...")
@@ -94,7 +97,8 @@ class Driver(_DriverBase):
             self.periodically_export_hands()
 
             print("Played ", times["t_playing"], "s.",
-                  "  ||  Trained", times["t_computation"], " s.",
+                  "  ||  Getting Grads", times["t_get_grads"], " s.",
+                  "  ||  Applying Grads", times["t_apply_grads"], " s.",
                   "  ||  Syncing took", times["t_syncing"], " s.",
                   )
 
@@ -119,15 +123,16 @@ class Driver(_DriverBase):
         store state of the whole system to be able to stop now and resume training later
         pickles ALL le_act workers and ALL t_profervers and saves that to Storage Server.
         """
-
+        print("checkpoint called")
         # Load Checkpoint of Driver
         with open(self._get_checkpoint_file_path(name=self._t_prof.name, step=self._cfr_iter,
                                                  cls=self.__class__, worker_id=""),
                   "wb") as pkl_file:
             pickle.dump(obj=self.algo.state_dict(), file=pkl_file, protocol=pickle.HIGHEST_PROTOCOL)
-
+        print("dumped self.algo")
         # Call on all other workers sequentially to be safe against RAM overload
         for w in self.la_handles + self.ps_handles:
+            print("checkpointing one worker")
             self._ray.wait([
                 self._ray.remote(w.checkpoint,
                                  self._cfr_iter)

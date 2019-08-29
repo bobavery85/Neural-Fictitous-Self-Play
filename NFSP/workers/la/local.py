@@ -165,19 +165,31 @@ class LearnerActor(WorkerBase):
 
     # __________________________________________________________________________________________________________________
     def checkpoint(self, curr_step):
+        print("in la checkpoint")
         for p_id in range(self._env_bldr.N_SEATS):
-            state = {
-                "pi": self._avg_learner[p_id].state_dict(),
-                "br": self._br_learner[p_id].state_dict(),
-                "cir": self._br_bufs[p_id].state_dict(),
-                "res": self._avg_bufs[p_id].state_dict(),
-                "p_id": p_id,
-            }
-            with open(self._get_checkpoint_file_path(name=self._t_prof.name, step=curr_step,
-                                                     cls=self.__class__, worker_id=str(self._id) + "_P" + str(p_id)),
-                      "wb") as pkl_file:
+            print("for p_id=", p_id)
+            if self._t_prof.lite_checkpoint:
+                state = {
+                    "pi": self._avg_learner[p_id].state_dict(),
+                    "br": self._br_learner[p_id].state_dict(),
+                    "p_id": p_id,
+                }
+            else:
+                state = {
+                    "pi": self._avg_learner[p_id].state_dict(),
+                    "br": self._br_learner[p_id].state_dict(),
+                    "cir": self._br_bufs[p_id].state_dict(),
+                    "res": self._avg_bufs[p_id].state_dict(),
+                    "p_id": p_id,
+                }
+            print("collected state")
+            file_name = self._get_checkpoint_file_path(name=self._t_prof.name, step=curr_step,
+                                                     cls=self.__class__, worker_id=str(self._id) + "_P" + str(p_id))
+            print(file_name)
+            with open(file_name, "wb") as pkl_file:
+                print("opened file")
                 pickle.dump(obj=state, file=pkl_file, protocol=pickle.HIGHEST_PROTOCOL)
-
+                print("finished_dump")
         with open(self._get_checkpoint_file_path(name=self._t_prof.name, step=curr_step,
                                                  cls=self.__class__, worker_id=str(self._id) + "_General"),
                   "wb") as pkl_file:
@@ -195,10 +207,11 @@ class LearnerActor(WorkerBase):
 
                 assert state["p_id"] == p_id
 
-                self._avg_learner[p_id].load_state_dict(state["avg"])
+                self._avg_learner[p_id].load_state_dict(state["pi"])
                 self._br_learner[p_id].load_state_dict(state["br"])
-                self._br_bufs[p_id].load_state_dict(state["cir"])
-                self._avg_bufs[p_id].load_state_dict(state["res"])
+                if not self._t_prof.lite_checkpoint:
+                    self._br_bufs[p_id].load_state_dict(state["cir"])
+                    self._avg_bufs[p_id].load_state_dict(state["res"])
 
         with open(self._get_checkpoint_file_path(name=name_to_load, step=step,
                                                  cls=self.__class__, worker_id=str(self._id) + "_General"),

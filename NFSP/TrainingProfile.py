@@ -26,6 +26,8 @@ class TrainingProfile(TrainingProfileBase):
                  name,
                  log_export_freq=200,
                  checkpoint_freq=99999999,
+                 lite_checkpoint=False,
+                 lite_checkpoint_steps=128000,
                  export_hands_freq=10000,
                  eval_agent_export_freq=99999999,
 
@@ -124,11 +126,9 @@ class TrainingProfile(TrainingProfileBase):
                  lbr_args=None,
                  rlbr_args=None,
                  history_args=None,
+                 offline_args=None,
                  ):
         print(" ************************** Initing args for: ", name, "  **************************")
-        print(torch.cuda.is_available())
-        print(torch.cuda.device_count())
-        print(torch.cuda.current_device())
         if nn_type == "recurrent":
             env_bldr_cls = HistoryEnvBuilder
 
@@ -240,10 +240,13 @@ class TrainingProfile(TrainingProfileBase):
                 "lbr": lbr_args,
                 "rlbr": rlbr_args,
                 "history": history_args,
+                "offline": offline_args,
             }
         )
 
         # ____________________________________________________ NFSP ____________________________________________________
+        self.lite_checkpoint = lite_checkpoint
+        self.lite_checkpoint_steps = lite_checkpoint_steps
         self.nn_type = nn_type
         self.n_br_updates_per_iter = int(n_br_updates_per_iter)
         self.n_avg_updates_per_iter = int(n_avg_updates_per_iter)

@@ -13,17 +13,39 @@ class HighLevelAlgo(_HighLevelAlgoBase):
         self.ps_handles = ps_handles
         self.ddqn_args = t_prof.module_args["ddqn"]
         self.n_br_updates = None
+        self.lite_checkpoint_initialized = False
+        self._loaded_checkpoint = False
 
     def init(self):
         self._update_las(update_br=True, update_avg=True, update_eps=True)
         self._update_all_target_nets()
         self.n_br_updates = 0
+        
+    def loaded_checkpoint(self, loaded_checkpoint):
+        self._loaded_checkpoint = loaded_checkpoint
 
     def run_one_iter(self, n_steps, n_br_updates, n_avg_updates):
         print(len(self._la_handles), "LAs still alive.")
-        t_computation = 0.0
+        t_get_grads = 0.0
+        t_apply_grads = 0.0
         t_syncing = 0.0
         t_playing = 0.0
+        
+        if ((not self.lite_checkpoint_initialized) and
+             self._t_prof.lite_checkpoint and 
+             self._loaded_checkpoint):
+            self.play(n_steps=self._t_prof.lite_checkpoint_steps)
+            print("Pre-populated:")
+            for la_handle in self._la_handles:
+                print("_avg_bufs")
+                for avg_buf in la_handle._avg_bufs:
+                    print(avg_buf.size, avg_buf.n_entries_seen)
+                print("_br_bufs")
+                for br_buf in la_handle._br_bufs:
+                    print(br_buf._size, br_buf._top)
+                    
+            self.lite_checkpoint_initialized = True
+        
 
         # _____________________________________________________ Play ___________________________________________________
         t_last = time.time()
@@ -34,8 +56,11 @@ class HighLevelAlgo(_HighLevelAlgoBase):
         for i in range(n_br_updates):
             #  parallel: compute and apply gradients
             t_last = time.time()
-            self._apply_grads(br_or_avg="br", grads_all_p=self._get_grads("br"))
-            t_computation += time.time() - t_last
+            br_grads = self._get_grads("br")
+            t_get_grads += time.time() - t_last
+            t_last = time.time()
+            self._apply_grads(br_or_avg="br", grads_all_p=br_grads)
+            t_apply_grads += time.time() - t_last
 
             #  update q on all las
             t_last = time.time()
@@ -54,8 +79,11 @@ class HighLevelAlgo(_HighLevelAlgoBase):
         for i in range(n_avg_updates):
             #  parallel: compute and apply gradients
             t_last = time.time()
-            self._apply_grads(br_or_avg="avg", grads_all_p=self._get_grads("avg"))
-            t_computation += time.time() - t_last
+            avg_grads = self._get_grads("avg")
+            t_get_grads += time.time() - t_last
+            t_last = time.time()
+            self._apply_grads(br_or_avg="avg", grads_all_p=avg_grads)
+            t_apply_grads += time.time() - t_last
 
             # update pi on all las
             t_last = time.time()
@@ -71,7 +99,8 @@ class HighLevelAlgo(_HighLevelAlgoBase):
 
         return {
             "t_playing": t_playing,
-            "t_computation": t_computation,
+            "t_get_grads": t_get_grads,
+            "t_apply_grads": t_apply_grads,
             "t_syncing": t_syncing,
         }
 
