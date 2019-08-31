@@ -40,7 +40,11 @@ class ParallelEnvs:
             actions[sw.env_idx] = sw.action
 
         for e_idx, ew in enumerate(self._env_wrappers):
-            obs, rew_all, done, info = ew.step(actions[e_idx].item())
+            #print("is canonical ", self._t_prof.canonical)
+            obs, rew_all, done, info = ew.step(actions[e_idx].item(),
+                                               canonical=self._t_prof.canonical)
+            #ew.print_obs(obs)
+            
 
             if done:
                 obs_n, rew_all_n, done_n, info_n = ew.reset()

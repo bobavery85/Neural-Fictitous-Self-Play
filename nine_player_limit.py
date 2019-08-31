@@ -11,7 +11,7 @@ from PokerRL.eval.head_to_head.HistoryArgs import HistoryArgs
 if __name__ == '__main__':
     
     N_WORKERS = 45
-    t_prof=TrainingProfile(name="nine_player_limit",
+    t_prof=TrainingProfile(name="nine_player_limit_canonical",
                            
                            DISTRIBUTED=True,
                            n_learner_actor_workers=N_WORKERS,
@@ -32,6 +32,7 @@ if __name__ == '__main__':
                           use_simplified_headsup_obs=False,
                           start_chips=48,
                           stack_randomization_range=(0, 0),
+                          canonical=True,
                          
                           feedforward_env_builder=FlatNonHULimitPokerEnvBuilder,
                           

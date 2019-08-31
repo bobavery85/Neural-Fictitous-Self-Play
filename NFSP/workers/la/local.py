@@ -165,9 +165,7 @@ class LearnerActor(WorkerBase):
 
     # __________________________________________________________________________________________________________________
     def checkpoint(self, curr_step):
-        print("in la checkpoint")
         for p_id in range(self._env_bldr.N_SEATS):
-            print("for p_id=", p_id)
             if self._t_prof.lite_checkpoint:
                 state = {
                     "pi": self._avg_learner[p_id].state_dict(),
@@ -182,14 +180,10 @@ class LearnerActor(WorkerBase):
                     "res": self._avg_bufs[p_id].state_dict(),
                     "p_id": p_id,
                 }
-            print("collected state")
             file_name = self._get_checkpoint_file_path(name=self._t_prof.name, step=curr_step,
                                                      cls=self.__class__, worker_id=str(self._id) + "_P" + str(p_id))
-            print(file_name)
             with open(file_name, "wb") as pkl_file:
-                print("opened file")
                 pickle.dump(obj=state, file=pkl_file, protocol=pickle.HIGHEST_PROTOCOL)
-                print("finished_dump")
         with open(self._get_checkpoint_file_path(name=self._t_prof.name, step=curr_step,
                                                  cls=self.__class__, worker_id=str(self._id) + "_General"),
                   "wb") as pkl_file:

@@ -123,16 +123,13 @@ class Driver(_DriverBase):
         store state of the whole system to be able to stop now and resume training later
         pickles ALL le_act workers and ALL t_profervers and saves that to Storage Server.
         """
-        print("checkpoint called")
         # Load Checkpoint of Driver
         with open(self._get_checkpoint_file_path(name=self._t_prof.name, step=self._cfr_iter,
                                                  cls=self.__class__, worker_id=""),
                   "wb") as pkl_file:
             pickle.dump(obj=self.algo.state_dict(), file=pkl_file, protocol=pickle.HIGHEST_PROTOCOL)
-        print("dumped self.algo")
         # Call on all other workers sequentially to be safe against RAM overload
         for w in self.la_handles + self.ps_handles:
-            print("checkpointing one worker")
             self._ray.wait([
                 self._ray.remote(w.checkpoint,
                                  self._cfr_iter)

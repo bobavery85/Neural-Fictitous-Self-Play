@@ -12,9 +12,9 @@ if __name__ == '__main__':
     t_prof=TrainingProfile(name="nine_player_limit",
                              nn_type="feedforward",
                              nn_structure="paper",
-                             n_envs=256,
+                             n_envs=1,
                              n_steps_pretrain_per_la=0,
-                             n_steps_per_iter_per_la=256,
+                             n_steps_per_iter_per_la=4,
                              device_inference="cpu",
     
                              game_cls=LimitHoldem,
@@ -22,6 +22,7 @@ if __name__ == '__main__':
                              use_simplified_headsup_obs=False,
                              start_chips=48,
                              stack_randomization_range=(0, 0),
+                             canonical=True,
                              
                              feedforward_env_builder=FlatNonHULimitPokerEnvBuilder,
                              export_hands_freq=999999999,
@@ -47,10 +48,10 @@ if __name__ == '__main__':
                              history_args=HistoryArgs(100, 100)
                              )
     ctrl = Driver(t_prof,
-                  eval_methods={"history": 990},
-                  n_iterations=250,
-                  iteration_to_import=40,
-                  name_to_import="nine_player_limit")
+                  eval_methods={},#"history": 990},
+                  n_iterations=40)#,
+                  #iteration_to_import=40,
+                  #name_to_import="nine_player_limit")
     ctrl.run()
     #obs_interp = LimitObsInterpreter(t_prof)
     #buffer = obs_interp.GetActionAndHandBuffer()
