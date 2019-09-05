@@ -22,7 +22,7 @@ if __name__ == '__main__':
                              use_simplified_headsup_obs=False,
                              start_chips=48,
                              stack_randomization_range=(0, 0),
-                             canonical=True,
+                             use_canonical=True,
                              
                              feedforward_env_builder=FlatNonHULimitPokerEnvBuilder,
                              export_hands_freq=999999999,
