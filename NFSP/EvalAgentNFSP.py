@@ -22,6 +22,10 @@ class EvalAgentNFSP(_EvalAgentBase):
         ]
         for pol in self.policies:
             pol.eval()
+        self.use_canonical = False
+        
+    def set_use_canonical(self, use_canonical):
+        self.use_canonical = use_canonical
 
     def can_compute_mode(self):
         return True
@@ -32,7 +36,8 @@ class EvalAgentNFSP(_EvalAgentBase):
 
         if self._mode == self.EVAL_MODE_AVG:
             return self.policies[p_id_acting].get_a_probs_for_each_hand(
-                pub_obs=self._internal_env_wrapper.get_current_obs(),
+                pub_obs=self._internal_env_wrapper.get_current_obs(
+                    use_canonical=self.use_canonical, p_id=p_id_acting),
                 legal_actions_list=self._internal_env_wrapper.env.get_legal_actions())
 
         else:
@@ -42,7 +47,8 @@ class EvalAgentNFSP(_EvalAgentBase):
         p_id_acting = self._internal_env_wrapper.env.current_player.seat_id
         range_idx = self._internal_env_wrapper.env.get_range_idx(p_id=p_id_acting)
         return self.policies[p_id_acting].get_a_probs(
-            pub_obses=[self._internal_env_wrapper.get_current_obs()],
+            pub_obses=[self._internal_env_wrapper.get_current_obs(
+                use_canonical=self.use_canonical, p_id=p_id_acting)],
             range_idxs=np.array([range_idx], dtype=np.int32),
             legal_actions_lists=[self._internal_env_wrapper.env.get_legal_actions()]
         )[0]
@@ -60,7 +66,8 @@ class EvalAgentNFSP(_EvalAgentBase):
             else:
                 a_probs_all_hands = None  # not needed
                 a_probs = self.policies[p_id_acting].get_a_probs(
-                    pub_obses=[self._internal_env_wrapper.get_current_obs()],
+                    pub_obses=[self._internal_env_wrapper.get_current_obs(
+                        use_canonical=self.use_canonical, p_id=p_id_acting)],
                     range_idxs=np.array([range_idx], dtype=np.int32),
                     legal_actions_lists=[self._internal_env_wrapper.env.get_legal_actions()]
                 )[0]

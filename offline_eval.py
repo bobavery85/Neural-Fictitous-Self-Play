@@ -43,8 +43,9 @@ if __name__ == '__main__':
                              
                              offline_args=OfflineArgs(
                                  3000,
-     '/home/robert/poker_ai_data/ec2/eval_agent/nine_player_limit/17500/eval_agent.pkl',
-     '/home/robert/poker_ai_data/ec2/eval_agent/nine_player_limit/10000/eval_agent.pkl')
+     '/home/robert/poker_ai_data/ec2/eval_agent/nine_player_limit_canonical/27000/eval_agent.pkl',
+     '/home/robert/poker_ai_data/ec2/eval_agent/nine_player_limit_canonical/10000/eval_agent.pkl',
+     True, True)
                              )
     ctrl = Driver(t_prof,
                   eval_methods={"offline": 1},

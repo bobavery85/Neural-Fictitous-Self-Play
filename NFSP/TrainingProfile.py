@@ -49,7 +49,7 @@ class TrainingProfile(TrainingProfileBase):
                  n_seats=2,
                  use_simplified_headsup_obs=True,
                  start_chips=None,
-                 canonical=False,
+                 use_canonical=False,
 
                  agent_bet_set=bet_sets.B_2,
                  stack_randomization_range=(0, 0),
@@ -248,7 +248,7 @@ class TrainingProfile(TrainingProfileBase):
         # ____________________________________________________ NFSP ____________________________________________________
         self.lite_checkpoint = lite_checkpoint
         self.lite_checkpoint_steps = lite_checkpoint_steps
-        self.canonical = canonical
+        self.use_canonical = use_canonical
         self.nn_type = nn_type
         self.n_br_updates_per_iter = int(n_br_updates_per_iter)
         self.n_avg_updates_per_iter = int(n_avg_updates_per_iter)
