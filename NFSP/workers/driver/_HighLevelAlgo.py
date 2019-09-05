@@ -35,15 +35,6 @@ class HighLevelAlgo(_HighLevelAlgoBase):
              self._t_prof.lite_checkpoint and 
              self._loaded_checkpoint):
             self.play(n_steps=self._t_prof.lite_checkpoint_steps)
-            print("Pre-populated:")
-            for la_handle in self._la_handles:
-                print("_avg_bufs")
-                for avg_buf in la_handle._avg_bufs:
-                    print(avg_buf.size, avg_buf.n_entries_seen)
-                print("_br_bufs")
-                for br_buf in la_handle._br_bufs:
-                    print(br_buf._size, br_buf._top)
-                    
             self.lite_checkpoint_initialized = True
         
 
