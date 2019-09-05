@@ -18,8 +18,8 @@ if __name__ == '__main__':
                            
                           nn_type="feedforward",
                           nn_structure="paper",
-                          cir_buf_size_each_la=5e5 / N_WORKERS,
-                          res_buf_size_each_la=5e6 / N_WORKERS,
+                          cir_buf_size_each_la=6e5 / N_WORKERS,
+                          res_buf_size_each_la=6e6 / N_WORKERS,
                           min_prob_add_res_buf=0.25,
                           
                           n_envs=256,
@@ -40,7 +40,7 @@ if __name__ == '__main__':
                           export_hands_freq=999999999,
                           eval_agent_export_freq=1000,
                           lite_checkpoint=True,
-                          lite_checkpoint_steps=256000,
+                          lite_checkpoint_steps=128000,
                           
                           target_net_update_freq=1000,
                           first_and_third_units=1024,
@@ -61,6 +61,6 @@ if __name__ == '__main__':
     ctrl = Driver(t_prof,
                   eval_methods={},#"history": 1000},
                   n_iterations=None,
-                  iteration_to_import=13500,
-                  name_to_import="nine_player_limit_canonical")
+                  iteration_to_import=27000,
+                  name_to_import="nine_player_limit_canonical_")
     ctrl.run()
